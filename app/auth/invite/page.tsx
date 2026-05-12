@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function InvitePage() {
+function InviteForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
@@ -71,7 +71,6 @@ export default function InvitePage() {
     setSubmitting(true);
     setError(null);
 
-    // Buscar el email del residente para registrarlo
     const { data: residentData } = await supabase
       .from("residents")
       .select("email")
@@ -95,14 +94,9 @@ export default function InvitePage() {
       return;
     }
 
-    // Ligar user_id al residente y marcar activo
     await supabase
       .from("residents")
-      .update({
-        user_id: authData.user.id,
-        status: "active",
-        invite_token: null,
-      })
+      .update({ user_id: authData.user.id, status: "active", invite_token: null })
       .eq("id", resident.id);
 
     router.push("/dashboard");
@@ -133,25 +127,17 @@ export default function InvitePage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <span className="text-[#1B2E3C] text-2xl font-medium tracking-tight">
-            Condexia
-          </span>
+          <span className="text-[#1B2E3C] text-2xl font-medium tracking-tight">Condexia</span>
           <p className="mt-1 text-sm text-[#64748B]">Bienvenido a {condoName}</p>
         </div>
 
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
-          <h1 className="text-[#0F172A] text-lg font-medium mb-1">
-            Hola, {resident?.name}
-          </h1>
-          <p className="text-sm text-[#64748B] mb-5">
-            Crea tu contraseña para acceder al portal.
-          </p>
+          <h1 className="text-[#0F172A] text-lg font-medium mb-1">Hola, {resident?.name}</h1>
+          <p className="text-sm text-[#64748B] mb-5">Crea tu contraseña para acceder al portal.</p>
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-xs text-[#64748B] mb-1">
-                Contraseña
-              </label>
+              <label className="block text-xs text-[#64748B] mb-1">Contraseña</label>
               <input
                 type="password"
                 required
@@ -162,11 +148,8 @@ export default function InvitePage() {
                 placeholder="Mínimo 8 caracteres"
               />
             </div>
-
             <div>
-              <label className="block text-xs text-[#64748B] mb-1">
-                Confirmar contraseña
-              </label>
+              <label className="block text-xs text-[#64748B] mb-1">Confirmar contraseña</label>
               <input
                 type="password"
                 required
@@ -176,9 +159,7 @@ export default function InvitePage() {
                 placeholder="Repite la contraseña"
               />
             </div>
-
             {error && <p className="text-xs text-[#EF4444]">{error}</p>}
-
             <button
               type="submit"
               disabled={submitting}
@@ -190,5 +171,17 @@ export default function InvitePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm text-[#64748B]">Cargando...</p>
+      </div>
+    }>
+      <InviteForm />
+    </Suspense>
   );
 }
