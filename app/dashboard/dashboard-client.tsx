@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import ComplaintsSection from "./complaints-section";
 import AreasSection from "./areas-section";
 
-type Resident = {
+export type Resident = {
   id: string;
   name: string;
   units: {
@@ -18,7 +18,7 @@ type Resident = {
   } | null;
 };
 
-type Payment = {
+export type Payment = {
   id: string;
   status: string;
   amount: number;

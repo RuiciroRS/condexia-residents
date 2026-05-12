@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import DashboardClient from "./dashboard-client";
+import DashboardClient, { type Resident, type Payment } from "./dashboard-client";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -8,7 +8,7 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: resident } = await supabase
+  const { data: raw } = await supabase
     .from("residents")
     .select(`
       id, name, status,
@@ -21,12 +21,25 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .single();
 
-  if (!resident || resident.status !== "active") {
-    await supabase.auth.signOut()
-    redirect("/auth/login")
+  if (!raw || raw.status !== "active") {
+    await supabase.auth.signOut();
+    redirect("/auth/login");
+  }
+
+  // Normalizar relaciones anidadas (Supabase las devuelve como array en el tipo inferido)
+  const units = Array.isArray(raw.units) ? raw.units[0] : raw.units;
+  const resident: Resident = {
+    id: raw.id,
+    name: raw.name,
+    units: units ? {
+      id: units.id,
+      number: units.number,
+      condominium_id: units.condominium_id,
+      unit_types: Array.isArray(units.unit_types) ? units.unit_types[0] ?? null : units.unit_types,
+      condominiums: Array.isArray(units.condominiums) ? units.condominiums[0] ?? null : units.condominiums,
+    } : null,
   };
 
-  // Pago del mes actual
   const now = new Date();
   const { data: currentPayment } = await supabase
     .from("payment_records")
@@ -39,7 +52,7 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       resident={resident}
-      currentPayment={currentPayment}
+      currentPayment={currentPayment as Payment}
     />
   );
 }
