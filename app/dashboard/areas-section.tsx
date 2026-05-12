@@ -16,7 +16,7 @@ type Reservation = {
   start_time: string;
   end_time: string;
   status: string;
-  common_areas: { name: string } | null;
+  common_areas: { name: string } | { name: string }[] | null;
 };
 
 const TIME_SLOTS = [
@@ -280,7 +280,7 @@ export default function AreasSection({
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-sm font-medium text-[#0F172A]">
-                          {r.common_areas?.name}
+                          {Array.isArray(r.common_areas) ? r.common_areas[0]?.name : r.common_areas?.name}
                         </p>
                         <p className="text-xs text-[#64748B] mt-0.5">
                           {new Date(r.date + "T12:00:00").toLocaleDateString("es-MX", {
