@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import ComplaintsSection from "./complaints-section";
 import AreasSection from "./areas-section";
+import AnnouncementsSection from "./announcements-section";
 
 export type Resident = {
   id: string;
@@ -43,7 +44,7 @@ export default function DashboardClient({
   const router = useRouter();
   const supabase = createClient();
 
-  const [activeSection, setActiveSection] = useState<"home" | "payment" | "complaints" | "areas">("home");
+  const [activeSection, setActiveSection] = useState<"home" | "payment" | "complaints" | "areas" | "announcements">("home");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [payment, setPayment] = useState<Payment>(currentPayment);
@@ -126,6 +127,7 @@ export default function DashboardClient({
           {[
             { id: "home", label: "Inicio" },
             { id: "payment", label: "Mi pago" },
+            { id: "announcements", label: "Avisos" },
             { id: "complaints", label: "Quejas" },
             { id: "areas", label: "Zonas comunes" },
           ].map((item) => (
@@ -248,6 +250,12 @@ export default function DashboardClient({
               </div>
             )}
           </div>
+        )}
+
+        {activeSection === "announcements" && (
+          <AnnouncementsSection
+            condominiumId={unit?.condominium_id ?? ""}
+          />
         )}
 
         {activeSection === "complaints" && (

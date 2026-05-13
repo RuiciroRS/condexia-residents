@@ -161,6 +161,21 @@ drop policy if exists "resident_see_own_condo" on condominiums;
 create policy "resident_see_own_condo" on condominiums
   for select using (id = my_condominium_id());
 
+-- announcements: avisos del admin a residentes de un condominio
+create table if not exists announcements (
+  id              uuid primary key default gen_random_uuid(),
+  condominium_id  uuid not null references condominiums(id) on delete cascade,
+  title           text not null,
+  body            text not null,
+  created_at      timestamptz default now()
+);
+
+alter table announcements enable row level security;
+
+drop policy if exists "resident_see_own_condo_announcements" on announcements;
+create policy "resident_see_own_condo_announcements" on announcements
+  for select using (condominium_id = my_condominium_id());
+
 -- ============================================================
 -- Storage buckets (ejecutar en Supabase Dashboard)
 -- ============================================================
