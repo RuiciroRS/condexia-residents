@@ -16,6 +16,7 @@ type Reservation = {
   start_time: string;
   end_time: string;
   status: string;
+  created_at: string;
   common_areas: { name: string } | { name: string }[] | null;
 };
 
@@ -46,6 +47,7 @@ export default function AreasSection({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"reserve" | "mine">("reserve");
+  const [historyTab, setHistoryTab] = useState<"upcoming" | "past">("upcoming");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -63,11 +65,10 @@ export default function AreasSection({
         .order("name"),
       supabase
         .from("area_reservations")
-        .select("id, date, start_time, end_time, status, common_areas(name)")
+        .select("id, date, start_time, end_time, status, created_at, common_areas(name)")
         .eq("resident_id", residentId)
-        .gte("date", today)
-        .order("date")
-        .order("start_time"),
+        .order("date", { ascending: false })
+        .order("start_time", { ascending: false }),
     ]);
 
     setAreas(areasRes.data ?? []);
@@ -262,47 +263,98 @@ export default function AreasSection({
 
       {tab === "mine" && (
         <div>
-          {reservations.filter((r) => r.status === "confirmed").length === 0 ? (
-            <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 text-center">
-              <p className="text-sm text-[#64748B]">No tienes reservas próximas.</p>
+          {/* Sub-tabs: Próximas / Historial */}
+          <div className="flex gap-1 mb-4 bg-[#F1F5F9] rounded-lg p-1 w-fit">
+            {(["upcoming", "past"] as const).map((t) => (
               <button
-                onClick={() => setTab("reserve")}
-                className="mt-3 text-sm text-[#0D9488] underline"
+                key={t}
+                onClick={() => setHistoryTab(t)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  historyTab === t ? "bg-white text-[#0F172A] shadow-sm" : "text-[#64748B]"
+                }`}
               >
-                Hacer una reserva
+                {t === "upcoming" ? "Próximas" : "Historial"}
               </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {reservations
-                .filter((r) => r.status === "confirmed")
-                .map((r) => (
-                  <div key={r.id} className="bg-white border border-[#E2E8F0] rounded-xl p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[#0F172A]">
-                          {Array.isArray(r.common_areas) ? r.common_areas[0]?.name : r.common_areas?.name}
-                        </p>
-                        <p className="text-xs text-[#64748B] mt-0.5">
-                          {new Date(r.date + "T12:00:00").toLocaleDateString("es-MX", {
-                            weekday: "long", day: "numeric", month: "long"
-                          })}
-                        </p>
-                        <p className="text-xs text-[#64748B]">
-                          {r.start_time.slice(0, 5)} – {r.end_time.slice(0, 5)}
-                        </p>
+            ))}
+          </div>
+
+          {(() => {
+            const filtered = reservations.filter((r) =>
+              historyTab === "upcoming"
+                ? r.status === "confirmed" && r.date >= today
+                : r.date < today || r.status === "cancelled",
+            );
+
+            if (filtered.length === 0) {
+              return (
+                <div className="bg-white border border-[#E2E8F0] rounded-xl p-6 text-center">
+                  <p className="text-sm text-[#64748B]">
+                    {historyTab === "upcoming"
+                      ? "No tienes reservas próximas."
+                      : "Sin reservas pasadas aún."}
+                  </p>
+                  {historyTab === "upcoming" && (
+                    <button
+                      onClick={() => setTab("reserve")}
+                      className="mt-3 text-sm text-[#0D9488] underline"
+                    >
+                      Hacer una reserva
+                    </button>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                {filtered.map((r) => {
+                  const areaName = Array.isArray(r.common_areas)
+                    ? r.common_areas[0]?.name
+                    : r.common_areas?.name;
+                  const isPast = r.date < today || r.status === "cancelled";
+                  return (
+                    <div
+                      key={r.id}
+                      className={`bg-white border rounded-xl p-4 ${isPast ? "border-[#E2E8F0] opacity-70" : "border-[#E2E8F0]"}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-[#0F172A]">{areaName}</p>
+                          <p className="text-xs text-[#64748B] mt-0.5">
+                            {new Date(r.date + "T12:00:00").toLocaleDateString("es-MX", {
+                              weekday: "long", day: "numeric", month: "long",
+                            })}
+                          </p>
+                          <p className="text-xs text-[#64748B]">
+                            {r.start_time.slice(0, 5)} – {r.end_time.slice(0, 5)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              r.status === "confirmed"
+                                ? "bg-[#D1FAE5] text-[#065F46]"
+                                : "bg-[#F1F5F9] text-[#64748B]"
+                            }`}
+                          >
+                            {r.status === "confirmed" ? "Confirmada" : "Cancelada"}
+                          </span>
+                          {r.status === "confirmed" && r.date >= today && (
+                            <button
+                              onClick={() => handleCancel(r.id)}
+                              className="text-xs text-[#EF4444] hover:underline"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleCancel(r.id)}
-                        className="text-xs text-[#EF4444] hover:underline"
-                      >
-                        Cancelar
-                      </button>
                     </div>
-                  </div>
-                ))}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>
