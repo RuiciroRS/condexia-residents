@@ -87,12 +87,19 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-4 text-center text-xs text-[#64748B]">
-          ¿Recibiste un link de invitación?{" "}
-          <a href="/auth/invite" className="text-[#0D9488] underline">
-            Regístrate aquí
-          </a>
-        </p>
+        <div className="mt-4 flex flex-col items-center gap-1.5">
+          <p className="text-center text-xs text-[#64748B]">
+            <a href="/auth/reset-password" className="text-[#0D9488] underline">
+              Olvidé mi contraseña
+            </a>
+          </p>
+          <p className="text-center text-xs text-[#64748B]">
+            ¿Recibiste un link de invitación?{" "}
+            <a href="/auth/invite" className="text-[#0D9488] underline">
+              Regístrate aquí
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
