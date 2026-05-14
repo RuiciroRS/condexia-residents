@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   const now = new Date();
   const { data: currentPayment } = await supabase
     .from("payment_records")
-    .select("id, status, amount, submitted_at, admin_notes")
+    .select("id, status, amount, submitted_at, receipt_url, admin_notes")
     .eq("resident_id", resident.id)
     .eq("period_month", now.getMonth() + 1)
     .eq("period_year", now.getFullYear())

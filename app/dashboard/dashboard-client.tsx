@@ -24,6 +24,7 @@ export type Payment = {
   status: string;
   amount: number;
   submitted_at: string | null;
+  receipt_url: string | null;
   admin_notes: string | null;
 } | null;
 
@@ -214,14 +215,27 @@ export default function DashboardClient({
               </div>
             </div>
 
-            {payment?.status !== "approved" && (
+            {payment?.status === "approved" && payment.receipt_url ? (
+              <div className="bg-white border border-[#E2E8F0] rounded-xl p-5">
+                <p className="text-sm font-medium text-[#0F172A] mb-2">Comprobante</p>
+                <a
+                  href={payment.receipt_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-[#0D9488] underline underline-offset-2"
+                >
+                  Ver comprobante aprobado
+                </a>
+              </div>
+            ) : payment?.status !== "approved" ? (
               <div className="bg-white border border-[#E2E8F0] rounded-xl p-5">
                 <p className="text-sm font-medium text-[#0F172A] mb-2">
-                  Subir comprobante
+                  {payment?.status === "rejected" ? "Volver a subir comprobante" : "Subir comprobante"}
                 </p>
                 <p className="text-xs text-[#64748B] mb-4">
-                  Sube la foto o captura de tu transferencia, OXXO o CoDi.
-                  El administrador lo revisará y confirmará tu pago.
+                  {payment?.status === "rejected"
+                    ? "Tu comprobante anterior fue rechazado. Sube uno nuevo para que el administrador lo revise."
+                    : "Sube la foto o captura de tu transferencia, OXXO o CoDi. El administrador lo revisará y confirmará tu pago."}
                 </p>
 
                 <label className="block">
@@ -244,11 +258,11 @@ export default function DashboardClient({
                 {payment?.status === "submitted" && (
                   <p className="mt-3 text-xs text-[#64748B] bg-[#F8FAFC] rounded-lg p-2">
                     Comprobante recibido el {new Date(payment.submitted_at!).toLocaleDateString("es-MX")}.
-                    El administrador lo esta revisando.
+                    El administrador lo está revisando.
                   </p>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         )}
 

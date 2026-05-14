@@ -8,6 +8,7 @@ type Complaint = {
   title: string;
   description: string;
   status: string;
+  admin_notes: string | null;
   created_at: string;
   resolved_at: string | null;
 };
@@ -45,7 +46,7 @@ export default function ComplaintsSection({
   async function fetchComplaints() {
     const { data } = await supabase
       .from("complaints")
-      .select("id, title, description, status, created_at, resolved_at")
+      .select("id, title, description, status, admin_notes, created_at, resolved_at")
       .eq("resident_id", residentId)
       .order("created_at", { ascending: false });
     setComplaints(data ?? []);
@@ -151,6 +152,12 @@ export default function ComplaintsSection({
                   </span>
                 </div>
                 <p className="text-xs text-[#64748B] mb-2 leading-relaxed">{c.description}</p>
+                {c.admin_notes && (
+                  <div className="mb-2 rounded-lg bg-[#F0FDF9] border border-[#99F6E4] p-2.5">
+                    <p className="text-xs font-medium text-[#0D9488] mb-0.5">Respuesta del administrador</p>
+                    <p className="text-xs text-[#0F172A] leading-relaxed">{c.admin_notes}</p>
+                  </div>
+                )}
                 <p className="text-xs text-[#C0C8D0]">
                   {new Date(c.created_at).toLocaleDateString("es-MX", {
                     day: "numeric", month: "long", year: "numeric"
