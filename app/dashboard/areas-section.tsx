@@ -59,6 +59,7 @@ export default function AreasSection({
         .from("common_areas")
         .select("id, name, capacity, rules")
         .eq("condominium_id", condominiumId)
+        .eq("is_active", true)
         .order("name"),
       supabase
         .from("area_reservations")

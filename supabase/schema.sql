@@ -75,6 +75,7 @@ create table if not exists complaints (
   description     text not null,
   status          text not null default 'open',
   -- open | in_progress | resolved | closed
+  admin_notes     text,          -- respuesta del admin visible para el residente
   created_at      timestamptz default now(),
   resolved_at     timestamptz
 );
