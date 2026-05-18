@@ -177,6 +177,23 @@ drop policy if exists "resident_see_own_condo_announcements" on announcements;
 create policy "resident_see_own_condo_announcements" on announcements
   for select using (condominium_id = my_condominium_id());
 
+-- push_subscriptions: suscripciones Web Push por residente
+create table if not exists push_subscriptions (
+  id          uuid primary key default gen_random_uuid(),
+  resident_id uuid not null references residents(id) on delete cascade,
+  endpoint    text not null,
+  p256dh      text not null,
+  auth        text not null,
+  created_at  timestamptz default now(),
+  unique (resident_id, endpoint)
+);
+
+alter table push_subscriptions enable row level security;
+
+drop policy if exists "resident_own_push_sub" on push_subscriptions;
+create policy "resident_own_push_sub" on push_subscriptions
+  for all using (resident_id = (select id from residents where user_id = auth.uid() limit 1));
+
 -- ============================================================
 -- Storage buckets (ejecutar en Supabase Dashboard)
 -- ============================================================

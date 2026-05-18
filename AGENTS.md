@@ -100,7 +100,7 @@ Ver `supabase/schema.sql` para políticas completas.
 - `approved` → validado (manual por ahora, automático con IA después)
 - `rejected` → admin rechazó, `admin_notes` explica por qué
 
-**No implementar validación automática hasta que el socio habilite la API key de Anthropic.**
+**No implementar validación automática hasta que se habilite la API key de Anthropic.**
 
 ## No tocar sin tarea explícita
 
