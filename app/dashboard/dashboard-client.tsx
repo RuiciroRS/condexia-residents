@@ -28,6 +28,17 @@ export type Payment = {
   admin_notes: string | null;
 } | null;
 
+export type PaymentRecord = {
+  id: string;
+  period_month: number;
+  period_year: number;
+  amount: number;
+  status: string;
+  receipt_url: string | null;
+  submitted_at: string | null;
+  admin_notes: string | null;
+};
+
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   pending: { label: "Pendiente", color: "text-[#F59E0B]" },
   submitted: { label: "En revisión", color: "text-[#64748B]" },
@@ -35,12 +46,23 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   rejected: { label: "Rechazado", color: "text-[#EF4444]" },
 };
 
+const MONTHS_ES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+function formatPeriod(month: number, year: number): string {
+  return `${MONTHS_ES[(month - 1) % 12] ?? month} ${year}`;
+}
+
 export default function DashboardClient({
   resident,
   currentPayment,
+  paymentHistory,
 }: {
   resident: Resident;
   currentPayment: Payment;
+  paymentHistory: PaymentRecord[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -190,6 +212,29 @@ export default function DashboardClient({
                 {payment?.status === "approved" ? "Ver comprobante" : "Pagar / Subir comprobante"}
               </button>
             </div>
+
+            {/* Últimos pagos en home */}
+            {paymentHistory.length > 0 && (
+              <div className="max-w-sm mt-4">
+                <p className="text-xs font-medium text-[#64748B] uppercase tracking-wide mb-2">Últimos pagos</p>
+                <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden">
+                  {paymentHistory.slice(0, 3).map((record, idx) => {
+                    const st = STATUS_LABEL[record.status] ?? { label: record.status, color: "text-[#64748B]" };
+                    return (
+                      <div
+                        key={record.id}
+                        className={`flex items-center justify-between px-4 py-3 ${idx > 0 ? "border-t border-[#E2E8F0]" : ""}`}
+                      >
+                        <span className="text-sm text-[#64748B] capitalize">
+                          {formatPeriod(record.period_month, record.period_year)}
+                        </span>
+                        <span className={`text-sm font-medium ${st.color}`}>{st.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -263,6 +308,59 @@ export default function DashboardClient({
                 )}
               </div>
             ) : null}
+
+            {/* Historial de pagos */}
+            <div className="mt-6">
+              <p className="text-sm font-medium text-[#0F172A] mb-3">Historial de pagos</p>
+              {paymentHistory.length === 0 ? (
+                <p className="text-sm text-[#64748B]">Sin pagos anteriores registrados.</p>
+              ) : (
+                <div className="bg-white border border-[#E2E8F0] rounded-xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#E2E8F0]">
+                        <th className="text-left px-4 py-3 text-xs font-medium text-[#64748B] uppercase tracking-wide">Período</th>
+                        <th className="text-right px-4 py-3 text-xs font-medium text-[#64748B] uppercase tracking-wide">Monto</th>
+                        <th className="text-left px-4 py-3 text-xs font-medium text-[#64748B] uppercase tracking-wide">Estado</th>
+                        <th className="text-right px-4 py-3 text-xs font-medium text-[#64748B] uppercase tracking-wide">Comprobante</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E2E8F0]">
+                      {paymentHistory.map((record) => {
+                        const st = STATUS_LABEL[record.status] ?? { label: record.status, color: "text-[#64748B]" };
+                        return (
+                          <tr key={record.id} className="hover:bg-[#F8FAFC] transition-colors">
+                            <td className="px-4 py-3 text-[#0F172A] capitalize">
+                              {formatPeriod(record.period_month, record.period_year)}
+                            </td>
+                            <td className="px-4 py-3 text-right tabular-nums text-[#0F172A]">
+                              ${record.amount.toLocaleString("es-MX")}
+                            </td>
+                            <td className={`px-4 py-3 font-medium ${st.color}`}>
+                              {st.label}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {record.receipt_url ? (
+                                <a
+                                  href={record.receipt_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#0D9488] underline underline-offset-2"
+                                >
+                                  Ver
+                                </a>
+                              ) : (
+                                <span className="text-[#CBD5E1]">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

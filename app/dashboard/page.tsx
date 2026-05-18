@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import DashboardClient, { type Resident, type Payment } from "./dashboard-client";
+import DashboardClient, { type Resident, type Payment, type PaymentRecord } from "./dashboard-client";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -41,18 +41,34 @@ export default async function DashboardPage() {
   };
 
   const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
   const { data: currentPayment } = await supabase
     .from("payment_records")
     .select("id, status, amount, submitted_at, receipt_url, admin_notes")
     .eq("resident_id", resident.id)
-    .eq("period_month", now.getMonth() + 1)
-    .eq("period_year", now.getFullYear())
+    .eq("period_month", currentMonth)
+    .eq("period_year", currentYear)
     .maybeSingle();
+
+  const { data: rawHistory } = await supabase
+    .from("payment_records")
+    .select("id, period_month, period_year, amount, status, receipt_url, submitted_at, admin_notes")
+    .eq("resident_id", resident.id)
+    .order("period_year", { ascending: false })
+    .order("period_month", { ascending: false })
+    .limit(13);
+
+  const paymentHistory: PaymentRecord[] = (rawHistory ?? [])
+    .filter((r) => !(r.period_year === currentYear && r.period_month === currentMonth))
+    .slice(0, 12);
 
   return (
     <DashboardClient
       resident={resident}
       currentPayment={currentPayment as Payment}
+      paymentHistory={paymentHistory}
     />
   );
 }
